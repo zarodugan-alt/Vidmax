@@ -27,6 +27,17 @@ data class HomeUiState(
     val analyze: AnalyzeUiState? = null,
     /** URL to prefill the paste bar with (share intent / browser). */
     val prefillUrl: String? = null,
+    /** Max concurrent downloads (S10) — powers the queue "slots" readout. */
+    val concurrency: Int = 2,
+    /** Non-null => the full playlist picker (S3) is shown over home. */
+    val playlistPicker: PlaylistPickerUiState? = null,
+)
+
+/** Full-screen playlist picker (S3) shown when an analyze result is a playlist. */
+data class PlaylistPickerUiState(
+    val info: VideoInfo,
+    /** Indices into [VideoInfo.playlistEntries] preselected when opening. */
+    val initialSelection: Set<Int> = emptySet(),
 )
 
 sealed interface AnalyzeUiState {

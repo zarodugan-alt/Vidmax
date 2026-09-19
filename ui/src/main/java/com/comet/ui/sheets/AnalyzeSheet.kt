@@ -20,8 +20,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -83,6 +81,7 @@ fun AnalyzeSheet(
     onDismiss: () -> Unit,
     onDownload: (DownloadRequest) -> Unit,
     onDownloadPlaylist: (VideoInfo, Set<Int>) -> Unit,
+    onOpenPlaylistPicker: (VideoInfo) -> Unit,
     onReanalyze: (String) -> Unit,
     onCopyError: (String) -> Unit,
     onOpenCookiesSettings: () -> Unit,
@@ -219,15 +218,6 @@ private fun ReadyContent(
         mutableIntStateOf(FormatCatalog.recommendedIndex(state.videoRows) ?: -1)
     }
     var selectedAudio by rememberSaveable(info.url) { mutableStateOf<Int?>(null) }
-    var playlistExpanded by rememberSaveable(info.url) { mutableStateOf(false) }
-    var playlistSelection by rememberSaveable(
-        info.url,
-        stateSaver = androidx.compose.runtime.saveable.Saver(
-            save = { it.toList() },
-            restore = { it.toSet() },
-        ),
-    ) { mutableStateOf(info.playlistEntries.indices.toSet()) }
-
     val audioSelected = selectedAudio != null
 
     Column(
@@ -280,7 +270,21 @@ private fun ReadyContent(
                 }
 
                 if (info.isPlaylist) {
-                    item { PlaylistSection(info, playlistExpanded, playlistSelection, onToggleExpand = { playlistExpanded = !playlistExpanded }, onToggle = { idx -> playlistSelection = if (idx in playlistSelection) playlistSelection - idx else playlistSelection + idx }) }
+                    item {
+                        PlaylistSummary(
+                            info = info,
+                            onChoose = {
+                                haptics.formatSelected()
+                                onDismiss()
+                                onOpenPlaylistPicker(info)
+                            },
+                            onDownloadAll = {
+                                haptics.downloadStarted()
+                                onDownloadPlaylist(info, info.playlistEntries.indices.toSet())
+                                onDismiss()
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -288,17 +292,19 @@ private fun ReadyContent(
         // ---- DOWNLOAD button ----
         val buttonLabel = when {
             info.isLive -> "LIVE — UNAVAILABLE"
-            info.isPlaylist -> "DOWNLOAD ${playlistSelection.size}"
+            info.isPlaylist -> "CHOOSE VIDEOS"
             audioSelected -> "EXTRACT AUDIO"
             else -> "DOWNLOAD"
         }
         val accent = if (audioSelected) AccentViolet else AccentCyan
         Button(
             onClick = {
-                haptics.downloadStarted()
                 if (info.isPlaylist) {
-                    onDownloadPlaylist(info, playlistSelection)
+                    haptics.formatSelected()
+                    onDismiss()
+                    onOpenPlaylistPicker(info)
                 } else {
+                    haptics.downloadStarted()
                     val row: FormatRowUi? = when {
                         audioSelected -> state.audioRows.getOrNull(selectedAudio ?: -1)
                         selectedVideo >= 0 -> state.videoRows.getOrNull(selectedVideo)
@@ -411,66 +417,73 @@ private fun TitleBlock(info: VideoInfo) {
     }
 }
 
-/** S2 playlist chip + inline selection list (full S3 picker ships in phase 2). */
+/**
+ * Playlist summary (S2): count + total runtime, with a full-picker hand-off (S3)
+ * and a one-tap "Download all".
+ */
 @Composable
-private fun PlaylistSection(
+private fun PlaylistSummary(
     info: VideoInfo,
-    expanded: Boolean,
-    selection: Set<Int>,
-    onToggleExpand: () -> Unit,
-    onToggle: (Int) -> Unit,
+    onChoose: () -> Unit,
+    onDownloadAll: () -> Unit,
 ) {
-    Column(Modifier.padding(top = 12.dp)) {
-        androidx.compose.material3.OutlinedButton(onClick = onToggleExpand) {
-            Text(
-                (if (expanded) "−" else "+") + " Playlist: ${info.playlistEntries.size} videos",
-                style = CometType.Button,
-                color = TextSecondary,
-            )
-        }
-        if (expanded) {
-            Spacer(Modifier.height(8.dp))
-            info.playlistEntries.take(50).forEachIndexed { index, entry ->
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(44.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Checkbox(
-                        checked = index in selection,
-                        onCheckedChange = { onToggle(index) },
-                        colors = CheckboxDefaults.colors(checkedColor = AccentCyan),
-                    )
-                    Text(
-                        "${index + 1}. ${entry.title ?: entry.id ?: "Untitled"}",
-                        style = CometType.Body,
-                        color = TextPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Text(
-                        entry.durationSec?.let { Format.duration(it) } ?: "",
-                        style = CometType.Telemetry,
-                        color = TextTertiary,
-                    )
-                }
+    val totalSec = info.playlistEntries.sumOf { it.durationSec ?: 0L }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 14.dp)
+            .glass(corner = CometRadius.formatRow)
+            .padding(Spacing.card),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(AccentCyan.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("☰", color = AccentCyan, style = CometType.BodyStrong)
             }
-            if (info.playlistEntries.size > 50) {
+            Spacer(Modifier.width(10.dp))
+            Column {
                 Text(
-                    "…and ${info.playlistEntries.size - 50} more (full picker ships in phase 2)",
+                    "${info.playlistEntries.size} videos in this playlist",
+                    style = CometType.BodyStrong,
+                    color = TextPrimary,
+                )
+                Text(
+                    if (totalSec > 0) "Total runtime ${Format.duration(totalSec)}" else "Pick the ones you want",
                     style = CometType.Caption,
                     color = TextTertiary,
                 )
             }
-            if (selection.size > 100) {
-                Text(
-                    "This will take a while.",
-                    style = CometType.Caption,
-                    color = Warning,
-                )
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            androidx.compose.material3.OutlinedButton(
+                onClick = onChoose,
+                shape = PillShape,
+                modifier = Modifier.weight(1f),
+            ) {
+                Text("Choose videos", style = CometType.Button, color = AccentCyan)
             }
+            androidx.compose.material3.OutlinedButton(
+                onClick = onDownloadAll,
+                shape = PillShape,
+                enabled = !info.isLive,
+                modifier = Modifier.weight(1f),
+            ) {
+                Text("Download all", style = CometType.Button, color = TextSecondary)
+            }
+        }
+        if (info.playlistEntries.size > 100) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Large playlist — this will take a while.",
+                style = CometType.Caption,
+                color = Warning,
+            )
         }
     }
 }

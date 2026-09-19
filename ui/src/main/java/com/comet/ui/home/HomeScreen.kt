@@ -80,10 +80,17 @@ fun HomeScreen(
     onEngineUpdate: () -> Unit,
     onReinstallEngine: () -> Unit,
     onClearFinished: () -> Unit,
+    onPauseAll: () -> Unit,
+    onResumeAll: () -> Unit,
     onDownload: (DownloadRequest) -> Unit,
     onDownloadPlaylist: (VideoInfo, Set<Int>) -> Unit,
+    onOpenPlaylistPicker: (VideoInfo) -> Unit,
+    onConfirmPlaylistPicker: (VideoInfo, Set<Int>) -> Unit,
+    onClosePlaylistPicker: () -> Unit,
     onDismissAnalyze: () -> Unit,
     onReanalyze: (String) -> Unit,
+    onShareLibraryItem: (DownloadEntity) -> Unit,
+    onRedownloadLibraryItem: (DownloadEntity) -> Unit,
     onConsumePrefill: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -217,6 +224,8 @@ fun HomeScreen(
                     onRetry = onRetry,
                     onCopyError = onCopyError,
                     onClearFinished = onClearFinished,
+                    onPauseAll = onPauseAll,
+                    onResumeAll = onResumeAll,
                     onOpenBrowser = onOpenBrowser,
                 )
 
@@ -224,6 +233,8 @@ fun HomeScreen(
                     state = state,
                     onOpen = onOpenLibraryItem,
                     onDelete = onDeleteLibraryItem,
+                    onShare = onShareLibraryItem,
+                    onRedownload = onRedownloadLibraryItem,
                 )
             }
         }
@@ -236,10 +247,22 @@ fun HomeScreen(
             onDismiss = onDismissAnalyze,
             onDownload = onDownload,
             onDownloadPlaylist = onDownloadPlaylist,
+            onOpenPlaylistPicker = onOpenPlaylistPicker,
             onReanalyze = onReanalyze,
             onCopyError = onCopyError,
             onOpenCookiesSettings = onOpenSettings,
             onUpdateEngine = onEngineUpdate,
+        )
+    }
+
+    // Full playlist picker (S3) — overlays home when an analyzed playlist is opened.
+    state.playlistPicker?.let { picker ->
+        com.comet.ui.screens.PlaylistPickerScreen(
+            info = picker.info,
+            initialSelection = picker.initialSelection,
+            onConfirm = { selection -> onConfirmPlaylistPicker(picker.info, selection) },
+            onDismiss = onClosePlaylistPicker,
+            hapticsEnabled = state.hapticsEnabled,
         )
     }
 }

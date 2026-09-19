@@ -23,6 +23,7 @@ import com.comet.engine.VideoInfo
 import com.comet.engine.VideoEngine
 import com.comet.ui.components.FormatCatalog
 import com.comet.ui.home.AnalyzeUiState
+import com.comet.ui.home.PlaylistPickerUiState
 import com.comet.ui.home.DownloadRequest
 import com.comet.ui.home.HomeUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -61,6 +62,8 @@ class HomeViewModel @Inject constructor(
     private val _redownloadPrompt = MutableStateFlow<RedownloadPrompt?>(null)
     private val _openPlayerRequest = MutableStateFlow<String?>(null)
     private val _permissionRequest = MutableStateFlow(false)
+    private val _playlistPicker = MutableStateFlow<PlaylistPickerUiState?>(null)
+    private val _shareRequest = MutableStateFlow<DownloadEntity?>(null)
 
     @Volatile
     private var pendingAfterPermission: DownloadRequest? = null
@@ -70,6 +73,7 @@ class HomeViewModel @Inject constructor(
     val toast: StateFlow<String?> = _toast.asStateFlow()
     val openPlayerRequest: StateFlow<String?> = _openPlayerRequest.asStateFlow()
     val permissionRequest: StateFlow<Boolean> = _permissionRequest.asStateFlow()
+    val shareRequest: StateFlow<DownloadEntity?> = _shareRequest.asStateFlow()
 
     @Suppress("UNCHECKED_CAST")
     val uiState: StateFlow<HomeUiState> = combine(
@@ -87,6 +91,7 @@ class HomeViewModel @Inject constructor(
         _clipboardUrl,
         _prefillUrl,
         _redownloadPrompt,
+        _playlistPicker,
     ) { values ->
         val queue = values[0] as? List<DownloadEntity> ?: emptyList()
         val library = values[1] as? List<DownloadEntity> ?: emptyList()
@@ -106,6 +111,8 @@ class HomeViewModel @Inject constructor(
             clipboardUrl = values[11] as? String,
             analyze = values[10] as? AnalyzeUiState,
             prefillUrl = values[12] as? String,
+            concurrency = (values[9] as? com.comet.data.datastore.AppSettings)?.concurrency ?: 2,
+            playlistPicker = values[14] as? PlaylistPickerUiState,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
@@ -273,6 +280,55 @@ class HomeViewModel @Inject constructor(
     fun cancel(id: String) = queueManager.cancel(id)
     fun retry(id: String) = queueManager.retry(id)
     fun clearFinished() = queueManager.clearFinished()
+    fun pauseAll() = queueManager.pauseAll()
+    fun resumeAll() = queueManager.resumeAll()
+
+    // ------------------------------------------------------------ playlist picker (S3)
+
+    /** Opens the full picker for an analyzed playlist (all entries preselected). */
+    fun openPlaylistPicker(info: VideoInfo) {
+        _playlistPicker.value = PlaylistPickerUiState(
+            info = info,
+            initialSelection = info.playlistEntries.indices.toSet(),
+        )
+    }
+
+    fun closePlaylistPicker() {
+        _playlistPicker.value = null
+    }
+
+    fun confirmPlaylistPicker(info: VideoInfo, selected: Set<Int>) {
+        _playlistPicker.value = null
+        downloadPlaylist(info, selected)
+    }
+
+    // ------------------------------------------------------------ library actions
+
+    /** Fire a system share sheet for a finished file (FileProvider uri). */
+    fun shareEntity(entity: DownloadEntity) {
+        if (entity.finalPath != null) _shareRequest.value = entity
+    }
+
+    fun consumeShareRequest() {
+        _shareRequest.value = null
+    }
+
+    /** Queue the same URL/format again from the library details sheet. */
+    fun redownload(entity: DownloadEntity) {
+        download(
+            DownloadRequest(
+                url = entity.url,
+                title = entity.title,
+                site = entity.site,
+                thumbnailUrl = entity.thumbnailPath,
+                durationSec = entity.durationSec,
+                selector = entity.formatId,
+                qualityLabel = entity.qualityLabel,
+                isAudio = entity.isAudio,
+                estimatedBytes = entity.sizeBytes,
+            ),
+        )
+    }
 
     fun copyError(text: String) {
         val cm = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return

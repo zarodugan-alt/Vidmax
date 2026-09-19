@@ -68,7 +68,13 @@ fun GlassCard(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(corner))
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(
+                if (onClick != null && enabled) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                },
+            )
             .glass(corner, accent.borderColor())
             .padding(Spacing.card),
         content = content,
@@ -82,6 +88,7 @@ fun GlassChip(
     modifier: Modifier = Modifier,
     accent: GlassAccent = GlassAccent.NEUTRAL,
     selected: Boolean = false,
+    enabled: Boolean = true,
     leading: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
 ) {
@@ -115,7 +122,11 @@ fun GlassChip(
         Text(
             text = text,
             style = CometType.Button,
-            color = if (selected) TextPrimary else TextTertiary,
+            color = when {
+                !enabled -> TextTertiary.copy(alpha = 0.4f)
+                selected -> TextPrimary
+                else -> TextTertiary
+            },
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )

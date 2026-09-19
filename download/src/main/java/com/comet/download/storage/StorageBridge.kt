@@ -34,6 +34,11 @@ class StorageBridge @Inject constructor(
         StatFs(workRoot().absolutePath).availableBytes
     }.getOrDefault(0L)
 
+    /** Total size of the storage volume holding the work dir (for the S11 stats bar). */
+    fun totalBytes(): Long = runCatching {
+        StatFs(workRoot().absolutePath).totalBytes
+    }.getOrDefault(0L)
+
     /** Pre-download space check (Part 8.4): block under 100MB free; warn under 1GB (UI). */
     fun hasSpaceFor(estimatedBytes: Long?): Boolean {
         val free = freeBytes()

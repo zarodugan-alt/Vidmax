@@ -58,6 +58,10 @@ data class SettingsUiState(
     val haptics: Boolean = true,
     val filenameTemplate: String = "{title} - {channel} [{quality}]",
     val appVersion: String = "",
+    val verboseLogging: Boolean = false,
+    val cookiesImportedAt: Long? = null,
+    val storageFreeBytes: Long = 0L,
+    val storageTotalBytes: Long = 0L,
 )
 
 /**
@@ -78,6 +82,10 @@ fun SettingsScreen(
     onChargingOnlyChange: (Boolean) -> Unit,
     onHapticsChange: (Boolean) -> Unit,
     onTemplateChange: (String) -> Unit,
+    onVerboseLoggingChange: (Boolean) -> Unit = {},
+    onImportCookies: () -> Unit = {},
+    onReinstallEngine: () -> Unit = {},
+    onOpenAbout: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -188,10 +196,31 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(Spacing.sectionGap / 2))
 
-        // ---- Storage (S11 subset) ----
+        // ---- Storage (S11) ----
         SectionHeader("Storage", color = TextSecondary)
         Spacer(Modifier.height(10.dp))
         GlassCard {
+            val usedFrac = if (state.storageTotalBytes > 0) {
+                (1f - state.storageFreeBytes.toFloat() / state.storageTotalBytes).coerceIn(0f, 1f)
+            } else {
+                0f
+            }
+            Text("Device storage", style = CometType.Body, color = TextPrimary)
+            Spacer(Modifier.height(6.dp))
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { usedFrac },
+                color = AccentCyan,
+                trackColor = TextTertiary.copy(alpha = 0.25f),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "${com.comet.ui.components.Format.bytes(state.storageFreeBytes)} free of " +
+                    "${com.comet.ui.components.Format.bytes(state.storageTotalBytes)}",
+                style = CometType.Telemetry,
+                color = TextTertiary,
+            )
+            Spacer(Modifier.height(14.dp))
             var template by remember(state.filenameTemplate) { mutableStateOf(state.filenameTemplate) }
             OutlinedTextField(
                 value = template,
@@ -220,7 +249,52 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(Spacing.sectionGap / 2))
 
-        // ---- About (S13 subset) ----
+        // ---- Advanced (S12) ----
+        SectionHeader("Advanced", color = TextSecondary)
+        Spacer(Modifier.height(10.dp))
+        GlassCard {
+            ToggleRow("Verbose engine logging", state.verboseLogging, onVerboseLoggingChange)
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Cookies", style = CometType.Body, color = TextPrimary)
+                    Text(
+                        if (state.cookiesImportedAt != null) {
+                            "Imported — private sites and age-gated videos work"
+                        } else {
+                            "For private / age-gated videos"
+                        },
+                        style = CometType.Caption,
+                        color = TextTertiary,
+                    )
+                }
+                androidx.compose.material3.OutlinedButton(onClick = onImportCookies) {
+                    Text(
+                        if (state.cookiesImportedAt != null) "Replace" else "Import",
+                        style = CometType.Button,
+                        color = AccentCyan,
+                    )
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Reinstall engine", style = CometType.Body, color = TextPrimary)
+                    Text(
+                        "Redeploys the bundled yt-dlp + FFmpeg binaries",
+                        style = CometType.Caption,
+                        color = TextTertiary,
+                    )
+                }
+                androidx.compose.material3.OutlinedButton(onClick = onReinstallEngine) {
+                    Text("Reinstall", style = CometType.Button, color = com.comet.ui.theme.Warning)
+                }
+            }
+        }
+
+        Spacer(Modifier.height(Spacing.sectionGap / 2))
+
+        // ---- About (S13) ----
         SectionHeader("About", color = TextSecondary)
         Spacer(Modifier.height(10.dp))
         GlassCard {
@@ -230,15 +304,21 @@ fun SettingsScreen(
                 "Privacy",
                 "COMET has no servers and collects nothing.",
             )
+            Spacer(Modifier.height(6.dp))
             Text(
-                "Cookies import, SponsorBlock, scheduling and the full licenses screen ship in later phases.",
-                style = CometType.Caption,
-                color = TextTertiary,
+                "Open the About screen →",
+                style = CometType.Button,
+                color = AccentCyan,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onOpenAbout)
+                    .padding(vertical = 4.dp),
             )
         }
         Spacer(Modifier.height(32.dp))
     }
 }
+
 
 @Composable
 private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
