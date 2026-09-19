@@ -20,6 +20,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
 private val Context.cometDataStore by preferencesDataStore(name = "comet_settings")
 
@@ -82,7 +85,10 @@ data class AppSettings(
  * Reads are exposed as a hot [StateFlow] (initial value [AppSettings] defaults) so UI code
  * never has to suspend; writes are fire-and-forget on an internal scope.
  */
-class SettingsRepository(context: Context) {
+@Singleton
+class SettingsRepository @Inject constructor(
+    @ApplicationContext context: Context,
+) {
 
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
