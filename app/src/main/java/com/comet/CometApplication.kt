@@ -3,7 +3,7 @@ package com.comet
 import android.app.Application
 import com.comet.download.notif.Notifications
 import com.comet.engine.EngineManager
-import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 import timber.log.Timber
 
@@ -12,7 +12,7 @@ import timber.log.Timber
  * Timber in debug, and the non-blocking engine warmup (~1s — the slow part). Room
  * queue restore happens on the first DownloadService start.
  */
-@AndroidEntryPoint
+@HiltAndroidApp
 class CometApplication : Application() {
 
     @Inject lateinit var engineManager: EngineManager
