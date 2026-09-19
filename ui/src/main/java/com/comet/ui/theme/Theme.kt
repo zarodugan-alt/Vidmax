@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -78,21 +77,13 @@ fun CometBackground(
     }
 }
 
-private fun Modifier.cometGradient(): Modifier = this.then(
-    androidx.compose.ui.draw.drawBehind {
-        val radius = size.maxDimension * 0.95f
-        drawRect(
-            brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                colors = listOf(
-                    androidx.compose.ui.graphics.Color.Transparent,
-                    BgSecondary.copy(alpha = 0.9f),
-                ),
-                center = androidx.compose.ui.geometry.Offset(
-                    size.width * 0.5f,
-                    size.height * 0.40f,
-                ),
-                radius = radius,
-            ),
-        )
-    },
-)
+private fun Modifier.cometGradient(): Modifier = drawBehind {
+    val radius = size.maxDimension * 0.95f
+    drawRect(
+        brush = Brush.radialGradient(
+            colors = listOf(Color.Transparent, BgSecondary.copy(alpha = 0.9f)),
+            center = Offset(size.width * 0.5f, size.height * 0.40f),
+            radius = radius,
+        ),
+    )
+}

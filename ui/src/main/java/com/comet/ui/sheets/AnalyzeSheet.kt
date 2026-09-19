@@ -68,6 +68,7 @@ import com.comet.ui.theme.TextSecondary
 import com.comet.ui.theme.TextTertiary
 import com.comet.ui.theme.Warning
 import com.comet.ui.theme.glass
+import com.comet.ui.theme.glassDanger
 
 /**
  * Analyze sheet (S2): modal bottom sheet over home, ~90% height. Shimmer skeletons while
@@ -170,8 +171,8 @@ private fun ErrorContent(
         }
         Spacer(Modifier.height(20.dp))
         when (failure.action) {
-            FailureAction.IMPORT_COOKIES -> ErrorAction("Import cookies", onOpenCookiesSettings)
-            FailureAction.UPDATE_ENGINE -> ErrorAction("Update engine", onUpdateEngine)
+            FailureAction.IMPORT_COOKIES -> ErrorAction("Import cookies") { onOpenCookiesSettings() }
+            FailureAction.UPDATE_ENGINE -> ErrorAction("Update engine") { onUpdateEngine() }
             FailureAction.RETRY -> ErrorAction("Try again") { onReanalyze(state.url) }
             else -> ErrorAction("Copy error") { onCopyError(failure.rawMessage) }
         }
@@ -352,7 +353,8 @@ private fun Thumbnail(info: VideoInfo) {
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
         )
-        if (info.durationSec != null && info.durationSec > 0) {
+        val duration = info.durationSec
+        if (duration != null && duration > 0) {
             Box(
                 Modifier
                     .align(Alignment.BottomEnd)
@@ -362,7 +364,7 @@ private fun Thumbnail(info: VideoInfo) {
                     .padding(horizontal = 6.dp, vertical = 2.dp),
             ) {
                 Text(
-                    Format.duration(info.durationSec),
+                    Format.duration(duration),
                     style = CometType.Telemetry,
                     color = TextPrimary,
                 )

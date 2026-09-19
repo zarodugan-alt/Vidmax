@@ -195,6 +195,8 @@ private fun Controls(
             IconAction(Icons.Rounded.Close, "Remove", onCancel, tint = Danger)
         }
 
+        DownloadState.CANCELLED -> Unit
+
         DownloadState.DONE -> Unit
     }
 }
@@ -325,11 +327,3 @@ private fun TextAction(
     )
 }
 
-private fun Modifier.clickable(onClick: () -> Unit): Modifier =
-    this.then(
-        androidx.compose.foundation.clickable(
-            interactionSource = null,
-            indication = null,
-            onClick = onClick,
-        ).let { Modifier },
-    )

@@ -3,6 +3,7 @@ package com.comet.ui.screens
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.comet.ui.components.CometGlyph
 import com.comet.ui.theme.AccentCyan
 import com.comet.ui.theme.AccentViolet
@@ -116,8 +118,3 @@ fun SplashScreen(
     }
 }
 
-private fun Modifier.androidBackground(): Modifier =
-    this.then(Modifier.fillMaxSize().background(BgPrimary))
-
-private fun Modifier.background(color: Color): Modifier =
-    androidx.compose.foundation.background(this, color)

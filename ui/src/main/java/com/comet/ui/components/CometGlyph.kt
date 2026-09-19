@@ -26,8 +26,8 @@ fun CometGlyph(
     trailColor: Color = AccentViolet,
 ) {
     Canvas(modifier.size(size)) {
-        val w = size.width
-        val h = size.height
+        val w = this.size.width
+        val h = this.size.height
         val head = Offset(w * 0.72f, h * 0.28f)
         val tail = Offset(w * 0.12f, h * 0.88f)
 

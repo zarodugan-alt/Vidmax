@@ -81,7 +81,7 @@ fun LibraryTab(
         ) {
             GlassChip("All", selected = filter == 0, onClick = { filter = 0 })
             GlassChip("Videos", selected = filter == 1, onClick = { filter = 1 })
-            GlassChip("Audio", selected = filter == 2, accent = com.comet.ui.components.GlassAccent.VIOLET, selected = filter == 2, onClick = { filter = 2 })
+            GlassChip("Audio", selected = filter == 2, accent = com.comet.ui.components.GlassAccent.VIOLET, onClick = { filter = 2 })
         }
 
         if (state.library.isEmpty()) {
@@ -171,7 +171,7 @@ private fun VideoCardArt(entity: DownloadEntity) {
                 Text("▶", color = AccentCyan, style = CometType.BodyStrong)
             }
         }
-        if (entity.durationSec != null) {
+        entity.durationSec?.let { duration ->
             Box(
                 Modifier
                     .align(Alignment.BottomEnd)
@@ -181,7 +181,7 @@ private fun VideoCardArt(entity: DownloadEntity) {
                     .padding(horizontal = 5.dp, vertical = 2.dp),
             ) {
                 Text(
-                    Format.duration(entity.durationSec),
+                    Format.duration(duration),
                     style = CometType.Telemetry,
                     color = TextSecondary,
                 )

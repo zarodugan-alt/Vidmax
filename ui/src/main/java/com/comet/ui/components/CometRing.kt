@@ -2,6 +2,7 @@ package com.comet.ui.components
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -35,7 +36,6 @@ import com.comet.ui.theme.AccentCyan
 import com.comet.ui.theme.AccentCyanDim
 import com.comet.ui.theme.AccentViolet
 import com.comet.ui.theme.AccentVioletDim
-import com.comet.ui.theme.BounceSpring
 import com.comet.ui.theme.Danger
 import com.comet.ui.theme.Motion
 import com.comet.ui.theme.Success
@@ -125,8 +125,8 @@ fun CometRing(
     val checkScale by animateFloatAsState(
         targetValue = if (state == RingState.COMPLETE) 1f else 0f,
         animationSpec = spring(
-            dampingRatio = BounceSpring.dampingRatio,
-            stiffness = BounceSpring.stiffness,
+            dampingRatio = Motion.BounceSpring.dampingRatio,
+            stiffness = Motion.BounceSpring.stiffness,
         ),
         label = "checkPop",
     )

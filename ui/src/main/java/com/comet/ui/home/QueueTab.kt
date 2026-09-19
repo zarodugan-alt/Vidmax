@@ -120,7 +120,7 @@ fun QueueTab(
             }
             items(queuedOnly, key = { it.id }) { entity ->
                 val index = queuedOnly.indexOf(entity)
-                SwipeToCancel(onConfirm = { onCancel(entity.id) }) {
+                SwipeToCancel(haptics = haptics, onConfirm = { onCancel(entity.id) }) {
                     QueuedRow(
                         entity = entity,
                         position = index,
