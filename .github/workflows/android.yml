@@ -69,27 +69,82 @@ jobs:
           exit 0
 
       # Egress-restricted dev environment cannot fetch run logs from GitHub's blob
-      # storage, so failures are mirrored to the ci-logs branch instead.
+      # storage, so failures are mirrored to the ci-logs branch via the Contents API.
       - name: Publish failure logs (ci-logs branch)
         if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
-          RUN_DIR="logs/run-${GITHUB_RUN_ID}"
-          mkdir -p "/tmp/ci/${RUN_DIR}"
-          for log in build.log test.log lint.log; do
-            [ -f "$log" ] && cp "$log" "/tmp/ci/${RUN_DIR}/" || true
-          done
-          git config user.name "ci-log-bot"
-          git config user.email "actions@github.com"
-          if git fetch --depth=1 origin ci-logs; then
-            git checkout -B ci-logs FETCH_HEAD
+          set -x
+          # 1. Assemble the trimmed failure report.
+          RUN_ID="${GITHUB_RUN_ID}"
+          REPORT="/tmp/report.txt"
+          {
+            echo "CI failure report — run ${RUN_ID} (${GITHUB_SHA})"
+            echo "=================================================="
+            for log in build.log test.log lint.log; do
+              if [ -f "$log" ]; then
+                echo ""
+                echo "########## ${log} — error lines ##########"
+                grep -nE "^e: file:|error: |FAILURE: |What went wrong|Execution failed for task|Caused by:" "$log" || true
+                echo ""
+                echo "########## ${log} — tail 400 ##########"
+                tail -n 400 "$log"
+              fi
+            done
+          } > "$REPORT" 2>&1 || true
+          wc -c "$REPORT"
+
+          # 2. Ensure the ci-logs branch exists (point it at this commit).
+          SHA="$(git rev-parse HEAD)"
+          curl -sS -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${REPO}/git/refs" \
+            -d "{\"ref\": \"refs/heads/ci-logs\", \"sha\": \"${SHA}\"}" \
+            | grep -q '"ref"' && echo "branch created" || echo "branch exists (or create failed — continuing)"
+
+          # 3. Commit the report to ci-logs via the Contents API.
+          python3 - "$REPORT" << 'PYEOF'
+          import base64, json, os, sys, urllib.request
+          path = sys.argv[1]
+          repo = os.environ["REPO"]
+          token = os.environ["GH_TOKEN"]
+          run_id = os.environ["GITHUB_RUN_ID"]
+          content = base64.b64encode(open(path, "rb").read()).decode()
+          body = json.dumps({
+              "message": f"CI failure logs — run {run_id} [skip ci]",
+              "content": content,
+              "branch": "ci-logs",
+          }).encode()
+          req = urllib.request.Request(
+              f"https://api.github.com/repos/{repo}/contents/logs/run-{run_id}.txt",
+              data=body,
+              headers={
+                  "Authorization": f"Bearer {token}",
+                  "Accept": "application/vnd.github+json",
+                  "Content-Type": "application/json",
+              },
+              method="PUT",
+          )
+          try:
+              with urllib.request.urlopen(req) as resp:
+                  print("contents-api status:", resp.status)
+          except urllib.error.HTTPError as e:
+              print("contents-api error:", e.code, e.read().decode()[:500])
+              raise
+          PYEOF
+          touch /tmp/published
+
+      - name: Report log-publish status
+        if: always()
+        run: |
+          if [ -f /tmp/published ]; then
+            echo "::notice::failure logs published to ci-logs branch"
           else
-            git checkout -b ci-logs
+            echo "::error::failure logs were NOT published — check publish step"
           fi
-          mkdir -p logs
-          cp -r "/tmp/ci/logs/run-${GITHUB_RUN_ID}" logs/
-          git add logs
-          git commit -m "CI failure logs — run ${GITHUB_RUN_ID} [skip ci]"
-          git push origin ci-logs
 
       - name: Upload APKs
         if: success()

@@ -264,7 +264,7 @@ class YtDlpEngine @Inject constructor(
 
     // ---------------------------------------------------------------- cancel / update / version
 
-    override suspend fun cancel(taskId: String) = withContext(Dispatchers.IO) {
+    override suspend fun cancel(taskId: String): Unit = withContext(Dispatchers.IO) {
         YoutubeDL.getInstance().destroyProcessById(taskId)
     }
 
