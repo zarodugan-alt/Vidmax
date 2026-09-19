@@ -110,8 +110,8 @@ object FormatCatalog {
                     label = "${height}p",
                     badge = when {
                         height >= 2160 -> "4K"
-                        height >= 1080 -> "HD"
                         isMerge -> "merge"
+                        height >= 1080 -> "HD"
                         else -> null
                     },
                     sizeLabel = size?.let {

@@ -103,8 +103,8 @@ class ProgressParserTest {
         val parsed = ProgressParser.parse(line) as ParsedLine.Progress
 
         assertEquals(50f, parsed.percent, 0.01f)
-        assertEquals(10 * 1024 * 1024, parsed.downloadedBytes)
-        assertEquals(20 * 1024 * 1024, parsed.totalBytes)
+        assertEquals(10L * 1024 * 1024, parsed.downloadedBytes)
+        assertEquals(20L * 1024 * 1024, parsed.totalBytes)
         assertEquals(4.2 * 1024 * 1024, parsed.bytesPerSec!!.toDouble(), 1.0)
         assertEquals(90, parsed.etaSec)
     }

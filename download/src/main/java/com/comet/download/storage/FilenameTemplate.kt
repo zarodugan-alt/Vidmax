@@ -12,6 +12,7 @@ object FilenameTemplate {
 
     private val illegal = Regex("""[\\/:*?"<>|\u0000]""")
     private val collapses = Regex("""\s{2,}""")
+    private val emptyGroups = Regex("""\[\s*\]|\(\s*\)|\{\s*\}""")
 
     fun render(
         template: String,
@@ -32,9 +33,12 @@ object FilenameTemplate {
             .replace("{id}", sanitize(id ?: ""))
             .replace("{site}", sanitize(site ?: ""))
         val cleaned = sanitize(name)
-            .trim()
-            .trimEnd('.', ' ')
+            .replace(emptyGroups, "")
             .replace(collapses, " ")
+            .trim()
+            .trimEnd('.', ' ', '-')
+            .replace(collapses, " ")
+            .trim()
         return cleaned.ifBlank { "Untitled" }
     }
 

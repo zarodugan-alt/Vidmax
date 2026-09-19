@@ -61,10 +61,18 @@ object ProgressParser {
                 toBytes(s.groupValues[1].toDoubleOrNull(), s.groupValues[2])
             }
             val etaSec = ytEta.find(line)?.let { e ->
-                val mm = e.groupValues[1].toIntOrNull() ?: 0
-                val ss = e.groupValues[2].toIntOrNull() ?: 0
-                val hh = e.groupValues[3].toIntOrNull() ?: 0
-                hh * 3600 + mm * 60 + ss
+                if (e.groupValues[3].isNotEmpty()) {
+                    // hh:mm:ss — the optional third group is present, so group 1 is hours.
+                    val hh = e.groupValues[1].toIntOrNull() ?: 0
+                    val mm = e.groupValues[2].toIntOrNull() ?: 0
+                    val ss = e.groupValues[3].toIntOrNull() ?: 0
+                    hh * 3600 + mm * 60 + ss
+                } else {
+                    // mm:ss
+                    val mm = e.groupValues[1].toIntOrNull() ?: 0
+                    val ss = e.groupValues[2].toIntOrNull() ?: 0
+                    mm * 60 + ss
+                }
             }
             return ParsedLine.Progress(percent, downloadedBytes, totalBytes, bytesPerSec, etaSec)
         }
