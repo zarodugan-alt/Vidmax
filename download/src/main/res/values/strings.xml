@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel_downloads">Downloads</string>
+    <string name="notif_channel_downloads_desc">Active download progress</string>
+    <string name="notif_channel_completed">Completed</string>
+    <string name="notif_channel_completed_desc">Finished downloads</string>
+    <string name="notif_action_pause">Pause</string>
+    <string name="notif_action_resume">Resume</string>
+    <string name="notif_action_cancel">Cancel</string>
+    <string name="notif_action_retry">Retry</string>
+    <string name="notif_action_play">Play</string>
+    <string name="notif_queue_active">Downloading</string>
+    <string name="notif_queue_idle">Queue idle</string>
+    <string name="notif_done">Done — %1$s</string>
+    <string name="notif_failed">Failed — %1$s</string>
+</resources>

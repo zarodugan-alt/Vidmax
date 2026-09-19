@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Notification glyph: white comet streak (status icons must be alpha-only). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M20.2,3.8 L9.9,9.9 L3.8,20.2 L14.1,14.1 Z M9.9,9.9 L14.1,14.1"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M19.4,4.6 m-1.9,0 a1.9,1.9 0 1,1 3.8,0 a1.9,1.9 0 1,1 -3.8,0"
+        android:fillColor="#FFFFFFFF"/>
+</vector>

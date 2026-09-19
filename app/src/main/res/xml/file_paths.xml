@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Library sharing (FileProvider): public media dirs + app files. -->
+    <external-path name="comet_public" path="." />
+    <external-files-path name="comet_app" path="." />
+    <files-path name="comet_internal" path="." />
+</paths>
