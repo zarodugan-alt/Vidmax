@@ -43,6 +43,12 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    lint {
+        // targetSdk 28 is a deliberate spec decision (legacy storage + no
+        // foregroundServiceType requirement). Distribution is GitHub Releases and
+        // F-Droid only — the Google Play minimum-target rule does not apply.
+        disable += "ExpiredTargetSdkVersion"
+    }
 
     buildFeatures {
         compose = true
