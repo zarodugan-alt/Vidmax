@@ -63,7 +63,7 @@ class Notifications @Inject constructor(
             .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setContentIntent(launchIntent(null))
+            .setContentIntent(launchPendingIntent(null))
             .build()
     }
 
@@ -72,10 +72,10 @@ class Notifications @Inject constructor(
         val builder = baseBuilder(CHANNEL_DOWNLOADS)
             .setContentTitle(entity.title)
             .setContentText(progressLine(entity, live))
-            .setProgress(100, (pct * 100).toInt(), pct == null)
+            .setProgress(100, ((pct ?: 0f) * 100).toInt(), pct == null)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setContentIntent(launchIntent(entity.id))
+            .setContentIntent(launchPendingIntent(entity.id))
 
         if (entity.state == DownloadState.DOWNLOADING) {
             builder.addAction(
@@ -103,7 +103,7 @@ class Notifications @Inject constructor(
             .setContentTitle(context.getString(R.string.notif_done, entity.title))
             .setContentText(entity.qualityLabel)
             .setAutoCancel(true)
-            .setContentIntent(launchIntent(entity.id))
+            .setContentIntent(launchPendingIntent(entity.id))
             .addAction(
                 R.drawable.ic_stat_comet,
                 context.getString(R.string.notif_action_play),
@@ -116,7 +116,7 @@ class Notifications @Inject constructor(
             .setContentTitle(context.getString(R.string.notif_failed, entity.title))
             .setContentText(userMessage)
             .setAutoCancel(true)
-            .setContentIntent(launchIntent(entity.id))
+            .setContentIntent(launchPendingIntent(entity.id))
             .addAction(
                 R.drawable.ic_stat_comet,
                 context.getString(R.string.notif_action_retry),
@@ -126,6 +126,12 @@ class Notifications @Inject constructor(
 
     fun notifyActive(entity: DownloadEntity, live: LiveProgress?) =
         safeNotify(entity.id.hashCode(), active(entity, live))
+
+    fun notifyCompleted(entity: DownloadEntity) =
+        safeNotify(entity.id.hashCode(), completed(entity))
+
+    fun notifyFailed(entity: DownloadEntity, userMessage: String) =
+        safeNotify(entity.id.hashCode(), failed(entity, userMessage))
 
     fun cancel(id: String) = NotificationManagerCompat.from(context).cancel(id.hashCode())
 
@@ -158,10 +164,10 @@ class Notifications @Inject constructor(
         return intent
     }
 
-    private fun launchPendingIntent(downloadId: String): PendingIntent =
+    private fun launchPendingIntent(downloadId: String?): PendingIntent =
         PendingIntent.getActivity(
             context,
-            ("play:$downloadId").hashCode(),
+            downloadId?.hashCode() ?: 0,
             launchIntent(downloadId),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
