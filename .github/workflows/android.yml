@@ -93,6 +93,12 @@ jobs:
                 tail -n 400 "$log"
               fi
             done
+            # Unit-test failures live in XML reports, not the console — dump them whole.
+            while IFS= read -r xml; do
+              echo ""
+              echo "########## FAILED TESTS: ${xml} ##########"
+              cat "$xml"
+            done < <(find . -path "*/build/test-results/*" -name "*.xml" -exec grep -l "<failure" {} \; 2>/dev/null)
           } > "$REPORT" 2>&1 || true
           wc -c "$REPORT"
 
