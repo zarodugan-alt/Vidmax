@@ -238,7 +238,7 @@ fun PlayerScreen(
                         .fillMaxSize()
                         .clickable { controlsVisible = !controlsVisible },
                 )
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = controlsVisible,
                     enter = fadeIn(),
                     exit = fadeOut(),
