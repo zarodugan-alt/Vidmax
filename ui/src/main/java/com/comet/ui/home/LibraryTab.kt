@@ -322,6 +322,7 @@ fun LibraryTab(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LibraryCard(entity: DownloadEntity, onOpen: () -> Unit) {
     Column(

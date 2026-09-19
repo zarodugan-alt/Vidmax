@@ -68,13 +68,7 @@ fun GlassCard(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(corner))
-            .then(
-                if (onClick != null && enabled) {
-                    Modifier.clickable(onClick = onClick)
-                } else {
-                    Modifier
-                },
-            )
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .glass(corner, accent.borderColor())
             .padding(Spacing.card),
         content = content,
@@ -105,7 +99,13 @@ fun GlassChip(
     Row(
         modifier = modifier
             .clip(PillShape)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(
+                if (onClick != null && enabled) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                },
+            )
             .height(32.dp)
             .background(
                 if (selected) Brush.verticalGradient(listOf(fill, fill)) else

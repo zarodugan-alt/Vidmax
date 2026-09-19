@@ -112,6 +112,7 @@ fun AnalyzeSheet(
                 onDismiss = onDismiss,
                 onDownload = onDownload,
                 onDownloadPlaylist = onDownloadPlaylist,
+                onOpenPlaylistPicker = onOpenPlaylistPicker,
             )
         }
     }
@@ -211,6 +212,7 @@ private fun ReadyContent(
     onDismiss: () -> Unit,
     onDownload: (DownloadRequest) -> Unit,
     onDownloadPlaylist: (VideoInfo, Set<Int>) -> Unit,
+    onOpenPlaylistPicker: (VideoInfo) -> Unit,
 ) {
     val info = state.info
 
