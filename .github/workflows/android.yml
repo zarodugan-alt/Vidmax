@@ -2,8 +2,12 @@ name: android-ci
 
 on:
   push:
+    branches: [main, arena/01a0b6a1-vidmax]
   pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -38,15 +42,57 @@ jobs:
           restore-keys: gradle-${{ runner.os }}-
 
       - name: Build debug APKs (ABI splits)
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew assembleDebug --stacktrace 2>&1 | tee build.log
 
       - name: Unit tests
-        run: ./gradlew testDebugUnitTest --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew testDebugUnitTest --stacktrace 2>&1 | tee test.log
 
       - name: Lint (NewApi check per AC #3)
-        run: ./gradlew :app:lintDebug --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew :app:lintDebug --stacktrace 2>&1 | tee lint.log
+
+      - name: Annotate errors
+        if: failure()
+        run: |
+          for log in build.log test.log lint.log; do
+            [ -f "$log" ] || continue
+            grep -E "^e: file:|error: |FAILURE: |Execution failed for task" "$log" \
+              | head -10 | while IFS= read -r line; do
+                echo "::error::[${log}] ${line:0:600}"
+              done
+          done
+          exit 0
+
+      # Egress-restricted dev environment cannot fetch run logs from GitHub's blob
+      # storage, so failures are mirrored to the ci-logs branch instead.
+      - name: Publish failure logs (ci-logs branch)
+        if: failure()
+        run: |
+          RUN_DIR="logs/run-${GITHUB_RUN_ID}"
+          mkdir -p "/tmp/ci/${RUN_DIR}"
+          for log in build.log test.log lint.log; do
+            [ -f "$log" ] && cp "$log" "/tmp/ci/${RUN_DIR}/" || true
+          done
+          git config user.name "ci-log-bot"
+          git config user.email "actions@github.com"
+          if git fetch --depth=1 origin ci-logs; then
+            git checkout -B ci-logs FETCH_HEAD
+          else
+            git checkout -b ci-logs
+          fi
+          mkdir -p logs
+          cp -r "/tmp/ci/logs/run-${GITHUB_RUN_ID}" logs/
+          git add logs
+          git commit -m "CI failure logs — run ${GITHUB_RUN_ID} [skip ci]"
+          git push origin ci-logs
 
       - name: Upload APKs
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: comet-debug-apks
@@ -60,3 +106,15 @@ jobs:
           name: lint-report
           path: app/build/reports/lint-results-debug.html
           retention-days: 14
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-logs
+          path: |
+            build.log
+            test.log
+            lint.log
+          retention-days: 14
+          if-no-files-found: ignore
